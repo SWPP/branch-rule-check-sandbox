@@ -1,0 +1,31 @@
+name: Synthetic second actor check
+on: workflow_dispatch
+permissions:
+  contents: write
+  pull-requests: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check repository-scoped merge permissions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: SWPP/branch-rule-check-sandbox
+        run: |
+          set -euo pipefail
+          attempt() {
+            local number="$1"
+            local head
+            head="$(gh api "repos/$GH_REPO/pulls/$number" --jq .head.sha)"
+            gh api --method PUT "repos/$GH_REPO/pulls/$number/merge" -f sha="$head" -f merge_method=squash --jq .merged
+          }
+          test "$(attempt 7)" = true
+          printf 'Control branch API merge succeeded.\n'
+          if attempt 8 > fixture-result.log 2>&1; then
+            printf 'Restricted branch unexpectedly allowed the merge.\n'
+            exit 1
+          fi
+          cat fixture-result.log
+          test "$(gh api "repos/$GH_REPO/pulls/8" --jq .merged)" = false
+          printf 'Restricted branch API merge was rejected.\n'
