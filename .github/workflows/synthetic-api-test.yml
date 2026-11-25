@@ -1,0 +1,14 @@
+name: Synthetic API test
+on:
+  push:
+    branches:
+      - automation/knowledge/fixture-*
+      - automation/failure-maintenance/fixture-*
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - run: echo "Synthetic verification passed"
